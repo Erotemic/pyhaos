@@ -11,6 +11,7 @@ mkinit /home/joncrall/code/pyhaos/pyhaos/__init__.py
 """
 from pyhaos import websockets_api
 
+from pyhaos.multi_api import (MultiAPI,)
 from pyhaos.websockets_api import (AsyncWebSocketsAPI, WebSocketsAPI,)
 
-__all__ = ['AsyncWebSocketsAPI', 'WebSocketsAPI', 'websockets_api']
+__all__ = ['AsyncWebSocketsAPI', 'WebSocketsAPI', 'websockets_api', 'MultiAPI']
