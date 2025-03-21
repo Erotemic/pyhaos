@@ -300,7 +300,7 @@ jobs:
       uses: actions/setup-python@v5.1.1
       with:
         python-version: ${{ matrix.python-version }}
-    - uses: actions/download-artifact@v4.1.8
+    - uses: actions/download-artifact@v4.2.1
       name: Download wheels
       with:
         pattern: wheels-*
@@ -396,13 +396,13 @@ jobs:
     steps:
     - name: Checkout source
       uses: actions/checkout@v4.1.1
-    - uses: actions/download-artifact@v4.1.8
+    - uses: actions/download-artifact@v4.2.1
       name: Download wheels
       with:
         pattern: wheels-*
         merge-multiple: true
         path: wheelhouse
-    - uses: actions/download-artifact@v4.1.8
+    - uses: actions/download-artifact@v4.2.1
       name: Download sdist
       with:
         name: sdist_wheels
@@ -471,13 +471,13 @@ jobs:
     steps:
     - name: Checkout source
       uses: actions/checkout@v4.1.1
-    - uses: actions/download-artifact@v4.1.8
+    - uses: actions/download-artifact@v4.2.1
       name: Download wheels
       with:
         pattern: wheels-*
         merge-multiple: true
         path: wheelhouse
-    - uses: actions/download-artifact@v4.1.8
+    - uses: actions/download-artifact@v4.2.1
       name: Download sdist
       with:
         name: sdist_wheels
@@ -547,7 +547,7 @@ jobs:
     steps:
     - name: Checkout source
       uses: actions/checkout@v4.1.1
-    - uses: actions/download-artifact@v4.1.8
+    - uses: actions/download-artifact@v4.2.1
       name: Download artifacts
       with:
         name: deploy_artifacts
