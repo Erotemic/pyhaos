@@ -2,6 +2,7 @@
 SeeAlso:
     https://github.com/designer-living/py-ha-ws-client/blob/main/py_ha_ws_client/client.py
     https://github.com/music-assistant/python-hass-client/blob/main/hass_client/client.py
+    https://github.com/home-assistant/core/blob/dev/homeassistant/components/config/label_registry.py
 """
 import json
 import websockets
@@ -86,6 +87,7 @@ class AsyncWebSocketsAPI:
         return response
 
     async def get_entities(self):
+        # https://github.com/home-assistant/core/blob/f3b23afc92185abe7156c27c4ce2f3a54556d8df/homeassistant/components/config/entity_registry.py#L126
         response = await self.send_command({"id": self._get_next_id(), "type": "config/entity_registry/list"})
         return response
 
@@ -105,6 +107,17 @@ class AsyncWebSocketsAPI:
 
     async def get_services(self):
         response = await self.send_command({"id": self._get_next_id(), "type": "get_services"})
+        return response
+
+    async def get_automations(self):
+        # Note: automations are types of entities
+        response = await self.get_entities()
+        new_result = []
+        for entity in response['result']:
+            domain = entity['entity_id'].rsplit('.')[0]
+            if domain == 'automation':
+                new_result.append(entity)
+        response['result'] = new_result
         return response
 
     async def get_states(self):
@@ -229,6 +242,64 @@ class AsyncWebSocketsAPI:
                 print('reconnected')
                 return
 
+    async def reload_all_configs(self):
+        """
+        Reloads all YAML configuration that can be reloaded without restarting
+        Home Assistant.
+
+        Ignore:
+            # Code to figure out what the service names are
+            services = self.get_services()
+            result = services['result']
+            for domain, items in sorted(result.items()):
+                print(f'domain={domain}')
+
+            for domain, items in sorted(result.items()):
+                service_names = sorted(items.keys())
+                if 'reload' in service_names:
+                    print(f'domain={domain}')
+                    print(service_names)
+
+            ha_services = result['homeassistant']
+            for service_name, info in ha_services.items():
+                print(service_name)
+                print(ub.urepr(info))
+        """
+        return await self.call_service(
+            domain="homeassistant",
+            service="reload_all",
+            service_data={}
+        )
+
+    async def reload_automations(self):
+        """
+        Reload all automation YAML configurations in Home Assistant.
+        """
+        return await self.call_service(
+            domain="automation",
+            service="reload",
+            service_data={}
+        )
+
+    # async def reload_config(self):
+    #     """
+    #     Reloads a specific YAML config.
+
+    #     Ignore:
+    #         # Code to figure out what the service names are
+    #         services = self.ws.get_services()
+    #         result = services['result']
+    #         ha_services = result['homeassistant']
+    #         for service_name, info in ha_services.items():
+    #             print(service_name)
+    #             print(ub.urepr(info))
+    #     """
+    #     return await self.call_service(
+    #         domain="homeassistant",
+    #         service="reload_all",
+    #         service_data={}
+    #     )
+
     async def close(self):
         """Close the WebSocket connection."""
         if self.connection:
@@ -238,15 +309,31 @@ class AsyncWebSocketsAPI:
 class WebSocketsAPI:
     """
     Synchronous wrapper around the AsyncWebSocketsAPI
+
+    Example:
+        >>> websocket_url = 'ws://localhost:8123/api/websocket'
+        >>> token = 'abiglongsecrettoken'
+        >>> self = WebSocketsAPI(websocket_url, token)
+        >>> entities = self.get_entities()
+        >>> print(ub.dict_hist([e['entity_category'] for e in entities['result']]))
+        >>> print(ub.dict_hist([e['platform'] for e in entities['result']]))
     """
     def __init__(self, websocket_url, token):
+        """
+        Ignore:
+            # For developers
+            self = MySetup().build().ws
+        """
         self.async_api = AsyncWebSocketsAPI(websocket_url=websocket_url, token=token)
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
+    def _get_next_id(self):
+        return self.async_api._get_next_id()
+
     def __getattr__(self, name):
         async_method = getattr(self.async_api, name, None)
-        print(f'async_method = {ub.urepr(async_method, nl=1)}')
+        # print(f'async_method = {ub.urepr(async_method, nl=1)}')
         if callable(async_method):
             def wrapper(*args, **kwargs):
                 result = self.loop.run_until_complete(async_method(*args, **kwargs))
@@ -256,3 +343,8 @@ class WebSocketsAPI:
                 return result
             return wrapper
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+
+    def __dir__(self):
+        basic = super().__dir__()
+        full = basic + dir(self.async_api)
+        return full
